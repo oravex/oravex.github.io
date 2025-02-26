@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perubah Resolusi Foto</title>
+    <style>
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    margin: 0;
+    min-height: 100vh; /* Ganti height: 100vh; dengan min-height: 100vh; */
+}
+        h2 {
+            color: #333;
+        }
+        input[type="file"], input[type="number"], select, button, a {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid gray;
+            border-radius: 5px;
+            background-color: white;
+            color: gray;
+            text-align: center;
+            text-decoration: none;
+        }
+        button:hover, a:hover {
+            background-color: #f0f0f0;
+        }
+        canvas {
+            margin-top: 20px;
+            border: 1px solid gray;
+            background-color: white;
+            max-width: 100%;
+            width: 256px; 
+            height: 256px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Perubah Resolusi Foto</h2>
+    <input type="file" id="upload" accept="image/*">
+    <label for="width">Lebar:</label>
+    <input type="number" id="width" placeholder="Lebar baru">
+    <label for="height">Tinggi:</label>
+    <input type="number" id="height" placeholder="Tinggi baru">
+    <label for="filter">Filter:</label>
+    <select id="filter">
+        <option value="near">Nearest-Neighbor</option>
+        <option value="linear">Bilinear</option>
+    </select>
+    <button onclick="resizeImage()">Ubah Resolusi</button>
+    <canvas id="canvas"></canvas>
+    <a id="download" style="display: none;" download="resized_image.png">Unduh Gambar</a>
+
+    <script>
+        let img = new Image();
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        img.onload = function() {
+            resizeCanvas();
+        };
+
+        function resizeCanvas() {
+            let aspectRatio = img.width / img.height;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        function resizeImage() {
+            let newWidth = document.getElementById('width').value;
+            let newHeight = document.getElementById('height').value;
+            let filter = document.getElementById('filter').value;
+            if (newWidth && newHeight) {
+                let aspectRatio = img.width / img.height;
+                if (newWidth / newHeight > aspectRatio) {
+                    canvas.width = newWidth;
+                    canvas.height = newWidth / aspectRatio;
+                } else {
+                    canvas.width = newHeight * aspectRatio;
+                    canvas.height = newHeight;
+                }
+
+                ctx.imageSmoothingEnabled = (filter === 'linear');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                document.getElementById('download').href = canvas.toDataURL();
+                document.getElementById('download').style.display = 'inline';
+            } else {
+                alert('Masukkan ukuran yang valid!');
+            }
+        }
+    </script>
+</body>
+</html>

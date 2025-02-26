@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perubah Format Foto</title>
+    <style>
+
+     body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    margin: 0;
+    min-height: 100vh; /* Ganti height: 100vh; dengan min-height: 100vh; */
+}
+        h2 {
+            color: #333;
+        }
+        input[type="file"], select, button, a {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid gray;
+            border-radius: 5px;
+            background-color: white;
+            color: gray;
+            text-align: center;
+            text-decoration: none;
+        }
+        button:hover, a:hover {
+            background-color: #f0f0f0;
+        }
+        canvas {
+            margin-top: 20px;
+            border: 1px solid gray;
+            background-color: white;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h2>Perubah Format Foto</h2>
+    <input type="file" id="upload" accept="image/*">
+    <label for="format">Format:</label>
+    <select id="format">
+        <option value="image/png">PNG</option>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/webp">WEBP</option>
+        <option value="image/bmp">BMP</option>
+    </select>
+    <button onclick="convertImage()">Ubah Format</button>
+    <canvas id="canvas"></canvas>
+    <a id="download" style="display: none;">Unduh Gambar</a>
+
+    <script>
+        let img = new Image();
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        img.onload = function() {
+            resizeCanvas();
+        };
+
+        function resizeCanvas() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        function convertImage() {
+            let format = document.getElementById('format').value;
+            let dataUrl = canvas.toDataURL(format);
+            let downloadLink = document.getElementById('download');
+            downloadLink.href = dataUrl;
+            downloadLink.download = `converted_image.${format.split('/')[1]}`;
+            downloadLink.style.display = 'inline';
+        }
+    </script>
+</body>
+</html>

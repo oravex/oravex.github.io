@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normal Map Generator</title>
+    <style>
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    margin: 0;
+    min-height: 100vh; /* Ganti height: 100vh; dengan min-height: 100vh; */
+}
+        h2 {
+            color: #333;
+        }
+        input[type="file"], select, button, a {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid gray;
+            border-radius: 5px;
+            background-color: white;
+            color: gray;
+            text-align: center;
+            text-decoration: none;
+        }
+        button:hover, a:hover {
+            background-color: #f0f0f0;
+        }
+        canvas {
+            margin-top: 20px;
+            border: 1px solid gray;
+            background-color: white;
+            max-width: 100%;
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Normal Map Generator</h2>
+    <input type="file" id="upload" accept="image/*">
+    <select id="normalMapType">
+        <option value="opengl" selected>OpenGL</option>
+        <option value="directx">DirectX</option>
+    </select>
+    <button onclick="generateNormalMap()">Generate Normal Map</button>
+    <div class="canvas-container">
+        <canvas id="originalCanvas"></canvas>
+        <canvas id="normalMapCanvas"></canvas>
+    </div>
+    <a id="download" style="display: none;" download="normal_map.png">Unduh Normal Map</a>
+
+    <script>
+        let img = new Image();
+        let originalCanvas = document.getElementById('originalCanvas');
+        let originalCtx = originalCanvas.getContext('2d');
+        let normalMapCanvas = document.getElementById('normalMapCanvas');
+        let normalMapCtx = normalMapCanvas.getContext('2d');
+        let normalMapType = document.getElementById('normalMapType').value;
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('normalMapType').addEventListener('change', function() {
+            normalMapType = this.value;
+        });
+
+        img.onload = function() {
+            originalCanvas.width = img.width;
+            originalCanvas.height = img.height;
+            originalCtx.drawImage(img, 0, 0);
+        };
+
+        function generateNormalMap() {
+            originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+            normalMapCtx.clearRect(0, 0, normalMapCanvas.width, normalMapCanvas.height);
+
+            originalCtx.drawImage(img, 0, 0);
+
+            let imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            let data = imageData.data;
+            let width = imageData.width;
+            let height = imageData.height;
+            let normalMapData = normalMapCtx.createImageData(width, height);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let index = (y * width + x) * 4;
+                    let left = getPixel(data, width, height, x - 1, y);
+                    let right = getPixel(data, width, height, x + 1, y);
+                    let top = getPixel(data, width, height, x, y - 1);
+                    let bottom = getPixel(data, width, height, x, y + 1);
+
+                    let dx = (right[0] - left[0]) / 255;
+                    let dy = (bottom[0] - top[0]) / 255;
+
+                    let normal;
+                    if (normalMapType === "opengl") {
+                        normal = normalize([dx, -dy, 1]);
+                    } else {
+                        normal = normalize([dx, dy, 1]);
+                    }
+
+                    normalMapData.data[index] = (normal[0] * 0.5 + 0.5) * 255;
+                    normalMapData.data[index + 1] = (normal[1] * 0.5 + 0.5) * 255;
+                    normalMapData.data[index + 2] = (normal[2] * 0.5 + 0.5) * 255;
+                    normalMapData.data[index + 3] = 255;
+                }
+            }
+
+            normalMapCanvas.width = width;
+            normalMapCanvas.height = height;
+            normalMapCtx.putImageData(normalMapData, 0, 0);
+
+            document.getElementById('download').href = normalMapCanvas.toDataURL();
+            document.getElementById('download').style.display = 'inline';
+        }
+
+        function getPixel(data, width, height, x, y) {
+            if (x < 0 || x >= width || y < 0 || y >= height) {
+                return [127, 127, 127, 255];
+            }
+            let index = (y * width + x) * 4;
+            return [data[index], data[index + 1], data[index + 2], data[index + 3]];
+        }
+
+        function normalize(vector) {
+            let length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
+            return [vector[0] / length, vector[1] / length, vector[2] / length];
+        }
+    </script>
+</body>
+</html>

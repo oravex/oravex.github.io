@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web OBJ Opener</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            margin: 0;
+            min-height: 100vh;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="file"], input[type="text"], button, select, input[type="checkbox"] {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid gray;
+            border-radius: 5px;
+            background-color: white;
+            color: gray;
+            text-align: center;
+        }
+        button:hover {
+            background-color: #f0f0f0;
+        }
+        #viewer {
+            width: 90%;
+            height: 50vh; /* Adjust height for landscape aspect ratio */
+            border: 1px solid gray;
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h2>Web OBJ Opener</h2>
+    <label for="upload">Upload OBJ File</label>
+    <input type="file" id="upload" accept=".obj">
+    <label for="albedo">Albedo Map</label>
+    <input type="file" id="albedo" accept="image/*" placeholder="Albedo">
+    <label for="normal">Normal Map</label>
+    <input type="file" id="normal" accept="image/*" placeholder="Normal Map">
+    <label for="roughness">Roughness Map</label>
+    <input type="file" id="roughness" accept="image/*" placeholder="Roughness">
+    <label for="metallic">Metallic Map</label>
+    <input type="file" id="metallic" accept="image/*" placeholder="Metallic">
+    <label for="bgColor">Background Color (RGB)</label>
+    <input type="text" id="bgColor" placeholder="255, 255, 255">
+    <label for="bgImage">Background Image</label>
+    <input type="file" id="bgImage" accept="image/*">
+    <button id="resetBg">Reset Background</button>
+    <div id="viewer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        let scene, camera, renderer, controls, obj, light;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight / 2), 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.5); // Adjust for landscape
+            renderer.shadowMap.enabled = true; // Enable shadow maps
+            renderer.toneMapping = THREE.ACESFilmicToneMapping; // Enable tone mapping
+            renderer.toneMappingExposure = 1; // Adjust exposure for tone mapping
+
+            document.getElementById('viewer').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.position.z = 5;
+
+            light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 1, 1).normalize();
+            light.castShadow = true; // Enable shadow casting for the light
+            light.shadow.mapSize.width = 2048; // Increase shadow map resolution
+            light.shadow.mapSize.height = 2048; // Increase shadow map resolution
+            scene.add(light);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            light.position.copy(camera.position).normalize();
+            renderer.render(scene, camera);
+        }
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    loadOBJ(e.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function loadOBJ(data) {
+            let loader = new THREE.OBJLoader();
+            obj = loader.parse(data);
+            obj.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true; // Enable shadow casting for the object
+                    child.receiveShadow = true; // Enable shadow receiving for the object
+                }
+            });
+            scene.add(obj);
+        }
+
+        function applyTexture(textureType, fileInput) {
+            let file = fileInput.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let texture = new THREE.TextureLoader().load(e.target.result);
+                    obj.traverse((child) => {
+                        if (child.isMesh) {
+                            switch (textureType) {
+                                case 'albedo':
+                                    child.material.map = texture;
+                                    break;
+                                case 'normal':
+                                    child.material.normalMap = texture;
+                                    break;
+                                case 'roughness':
+                                    child.material.roughnessMap = texture;
+                                    break;
+                                case 'metallic':
+                                    child.material.metalnessMap = texture;
+                                    break;
+                            }
+                            child.material.needsUpdate = true;
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('albedo').addEventListener('change', function(event) {
+            applyTexture('albedo', event.target);
+        });
+
+        document.getElementById('normal').addEventListener('change', function(event) {
+            applyTexture('normal', event.target);
+        });
+
+        document.getElementById('roughness').addEventListener('change', function(event) {
+            applyTexture('roughness', event.target);
+        });
+
+        document.getElementById('metallic').addEventListener('change', function(event) {
+            applyTexture('metallic', event.target);
+        });
+
+        document.getElementById('bgColor').addEventListener('change', function(event) {
+            let rgb = event.target.value.split(',').map(Number);
+            if (rgb.length === 3) {
+                let color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                renderer.setClearColor(new THREE.Color(color));
+            }
+        });
+
+        document.getElementById('bgImage').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let texture = new THREE.TextureLoader().load(e.target.result, function(texture) {
+                        texture.minFilter = THREE.LinearFilter;
+                        scene.background = texture;
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('resetBg').addEventListener('click', function() {
+            renderer.setClearColor(new THREE.Color(0xffffff));
+            scene.background = null;
+            document.getElementById('bgColor').value = '255, 255, 255';
+            document.getElementById('bgImage').value = '';
+        });
+
+        init();
+    </script>
+</body>
+</html>
