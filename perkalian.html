@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Perkalian 2 Mode</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f7f7f7;
+            color: #333;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            color: #555;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+
+        .mode-btn.active {
+            background-color: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .question-box {
+            border: 1px solid #ddd;
+            padding: 25px;
+            border-radius: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        input, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input {
+            text-align: center;
+            max-width: 200px;
+            margin: 15px auto;
+            font-size: 1.2rem;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #submit-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        #give-up {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #give-up:hover {
+            background-color: #da190b;
+        }
+
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .result {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 24px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .question-box {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .mode-btn {
+                padding: 10px 15px;
+                min-width: 120px;
+                font-size: 0.9rem;
+            }
+            
+            input {
+                font-size: 1rem;
+                max-width: 150px;
+            }
+            
+            .score {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .question-box {
+                padding: 15px;
+            }
+            
+            .options {
+                grid-template-columns: 1fr;
+            }
+            
+            button {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+            
+            input {
+                font-size: 0.9rem;
+                max-width: 130px;
+            }
+            
+            .score {
+                font-size: 1.2rem;
+            }
+            
+            .result {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+ <div class="score">Skor: <span id="score">0</span></div>
+    
+    <div class="mode-selector">
+        <button class="mode-btn active" onclick="switchMode('multiple')">Pilihan Ganda</button>
+        <button class="mode-btn" onclick="switchMode('manual')">Input Manual</button>
+    </div>
+
+    <div class="question-box" id="multipleChoiceMode">
+        <h2 id="question-mc">Soal</h2>
+        <div class="options" id="options"></div>
+        <div class="result" id="result-mc"></div>
+        <button id="give-up" onclick="giveUp()">Menyerah</button>
+    </div>
+
+    <div class="question-box hidden" id="manualInputMode">
+        <h2 id="question-manual">Soal</h2>
+        <input type="number" id="answerInput" placeholder="Jawaban">
+        <div>
+            <button id="submit-btn" onclick="checkManualAnswer()">Submit</button>
+            <button id="give-up" onclick="giveUp()">Menyerah</button>
+        </div>
+        <div class="result" id="result-manual"></div>
+    </div>
+
+    <script>
+        let currentMode = 'multiple';
+        let score = 0;
+        let num1, num2, correctAnswer;
+
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score').textContent = score;
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(mode));
+            });
+            document.getElementById('multipleChoiceMode').classList.toggle('hidden', mode !== 'multiple');
+            document.getElementById('manualInputMode').classList.toggle('hidden', mode !== 'manual');
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            correctAnswer = num1 * num2;
+            
+            // Update pertanyaan untuk kedua mode
+            document.getElementById('question-mc').textContent = 
+            document.getElementById('question-manual').textContent = 
+                `${num1} × ${num2} = ?`;
+
+            // Generate opsi untuk mode pilihan ganda
+            if(currentMode === 'multiple') {
+                const options = document.getElementById('options');
+                options.innerHTML = '';
+                
+                let answers = [correctAnswer];
+                while(answers.length < 4) {
+                    const randomAnswer = Math.floor(Math.random() * 100) + 1;
+                    if(!answers.includes(randomAnswer)) {
+                        answers.push(randomAnswer);
+                    }
+                }
+                answers.sort(() => Math.random() - 0.5);
+                
+                answers.forEach(answer => {
+                    const button = document.createElement('button');
+                    button.textContent = answer;
+                    button.onclick = () => checkMultipleChoiceAnswer(answer);
+                    options.appendChild(button);
+                });
+            } else {
+                document.getElementById('answerInput').value = '';
+            }
+        }
+
+        function checkMultipleChoiceAnswer(selected) {
+            const resultDiv = document.getElementById('result-mc');
+            if(selected === correctAnswer) {
+                resultDiv.textContent = "Benar! +10 Poin";
+                resultDiv.style.color = "green";
+                updateScore(10);
+                setTimeout(generateQuestion, 1000);
+            } else {
+                resultDiv.textContent = "Salah! -5 Poin";
+                resultDiv.style.color = "red";
+                updateScore(-5);
+            }
+        }
+
+        function checkManualAnswer() {
+            const userAnswer = parseInt(document.getElementById('answerInput').value);
+            const resultDiv = document.getElementById('result-manual');
+            
+            if(isNaN(userAnswer)) {
+                resultDiv.textContent = "Masukkan angka yang valid!";
+                resultDiv.style.color = "orange";
+                return;
+            }
+
+            if(userAnswer === correctAnswer) {
+                resultDiv.textContent = "Benar! +15 Poin";
+                resultDiv.style.color = "green";
+                updateScore(15);
+                setTimeout(generateQuestion, 1000);
+            } else {
+                resultDiv.textContent = "Salah! -3 Poin";
+                resultDiv.style.color = "red";
+                updateScore(-3);
+            }
+        }
+
+        function giveUp() {
+            const resultDiv = currentMode === 'multiple' ? 
+                document.getElementById('result-mc') : 
+                document.getElementById('result-manual');
+            
+            resultDiv.innerHTML = `Jawaban benar: ${correctAnswer}<br>Permainan diulang...`;
+            updateScore(-10);
+            setTimeout(generateQuestion, 2000);
+        }
+
+        // Handle Enter key untuk mode manual
+        document.getElementById('answerInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') checkManualAnswer();
+        });
+
+        // Mulai game
+        generateQuestion();
+    </script>
+</body>
+</html>
