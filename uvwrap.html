@@ -67,9 +67,117 @@
     <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/MTLLoader.js"></script>
 
-    <!-- Script JavaScript tetap sama seperti sebelumnya -->
     <script>
-        // ... (kode JavaScript tetap sama seperti sebelumnya)
+        let objData, mtlData, textures = {};
+        const uvCanvas = document.getElementById('uvCanvas');
+        const ctx = uvCanvas.getContext('2d');
+
+        // Handle file inputs
+        document.getElementById('objFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                objData = await file.text();
+                console.log("OBJ file loaded successfully.");
+            }
+        });
+
+        document.getElementById('mtlFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                mtlData = await file.text();
+                console.log("MTL file loaded successfully.");
+            }
+        });
+
+        document.getElementById('textures').addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files) {
+                for (let i = 0; i < files.length; i++) {
+                    textures[files[i].name] = files[i];
+                }
+                console.log("Textures loaded successfully:", Object.keys(textures));
+            }
+        });
+
+        // Main processing function
+        async function processFiles() {
+            if (!objData || !mtlData) {
+                alert("Please upload both OBJ and MTL files first.");
+                return;
+            }
+
+            const zip = new JSZip();
+            
+            // Add original files to ZIP
+            zip.file("model.obj", objData);
+            zip.file("material.mtl", mtlData);
+            
+            // Process textures
+            const texFolder = zip.folder("textures");
+            for (const [name, file] of Object.entries(textures)) {
+                texFolder.file(name, file);
+            }
+
+            // Process UVs
+            const uvFolder = zip.folder("uv_maps");
+            const uvData = await generateUVMaps();
+            uvData.forEach((uv, i) => {
+                uvFolder.file(`uv_map_${i}.png`, uv.split(',')[1], { base64: true });
+            });
+
+            // Generate ZIP
+            zip.generateAsync({ type: "blob" }).then(content => {
+                saveAs(content, "model_data.zip");
+                console.log("ZIP file generated and downloaded.");
+            });
+        }
+
+        // Generate UV maps from OBJ
+        async function generateUVMaps() {
+            const loader = new THREE.OBJLoader();
+            const materials = new THREE.MTLLoader().parse(mtlData);
+            loader.setMaterials(materials);
+            
+            const object = loader.parse(objData);
+            const uvMaps = [];
+
+            object.traverse(child => {
+                if (child.isMesh) {
+                    const geometry = child.geometry;
+                    if (geometry.attributes.uv) {
+                        uvMaps.push(drawUVMap(geometry));
+                    }
+                }
+            });
+
+            return uvMaps;
+        }
+
+        // Draw UV map to canvas
+        function drawUVMap(geometry) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+
+            const uvs = geometry.attributes.uv.array;
+            const count = geometry.attributes.uv.count;
+
+            for (let i = 0; i < count; i += 3) {
+                const uv1 = [uvs[i * 2] * 512, (1 - uvs[i * 2 + 1]) * 512];
+                const uv2 = [uvs[(i + 1) * 2] * 512, (1 - uvs[(i + 1) * 2 + 1]) * 512];
+                const uv3 = [uvs[(i + 2) * 2] * 512, (1 - uvs[(i + 2) * 2 + 1]) * 512];
+
+                ctx.beginPath();
+                ctx.moveTo(uv1[0], uv1[1]);
+                ctx.lineTo(uv2[0], uv2[1]);
+                ctx.lineTo(uv3[0], uv3[1]);
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            return uvCanvas.toDataURL();
+        }
     </script>
 </body>
 </html>
