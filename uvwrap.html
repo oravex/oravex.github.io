@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBJ UV Unwrapper</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        canvas { border: 1px solid #ccc; }
+        .upload-group {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+        }
+        .upload-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>OBJ/MTL UV Unwrapper</h1>
+    
+    <div class="upload-group">
+        <label for="objFile">📁 1. Upload OBJ File (.obj)</label>
+        <input type="file" id="objFile" accept=".obj">
+    </div>
+
+    <div class="upload-group">
+        <label for="mtlFile">📁 2. Upload MTL File (.mtl)</label>
+        <input type="file" id="mtlFile" accept=".mtl">
+    </div>
+
+    <div class="upload-group">
+        <label for="textures">🖼️ 3. Upload Texture Files (Multiple)</label>
+        <input type="file" id="textures" multiple accept="image/*">
+    </div>
+
+    <button onclick="processFiles()">⚡ Process and Download ZIP</button>
+    
+    <div class="container">
+        <div id="viewer"></div>
+        <canvas id="uvCanvas" width="512" height="512"></canvas>
+    </div>
+
+    <!-- Script tetap sama seperti sebelumnya -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/MTLLoader.js"></script>
+
+    <!-- Script JavaScript tetap sama seperti sebelumnya -->
+    <script>
+        // ... (kode JavaScript tetap sama seperti sebelumnya)
+    </script>
+</body>
+</html>
