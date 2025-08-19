@@ -6,28 +6,34 @@
 </head>
 <body>
   <h1>NFC Tester</h1>
-  <p id="status">Tempelkan kartu/tag NFC...</p>
+  <button id="scanBtn">Start Scan</button>
+  <p id="status">Belum mulai scan.</p>
 
   <script>
+    const scanBtn = document.getElementById("scanBtn");
     const statusEl = document.getElementById("status");
 
-    if ("NDEFReader" in window) {
-      const reader = new NDEFReader();
-      reader.scan().then(() => {
-        statusEl.textContent = "Scan dimulai, tempelkan kartu/tag!";
-        reader.onreading = () => {
-          statusEl.textContent = "✅ TAG TERDETEKSI!";
-          // reset setelah 2 detik
-          setTimeout(() => {
-            statusEl.textContent = "Tempelkan kartu/tag NFC...";
-          }, 2000);
-        };
-      }).catch(err => {
-        statusEl.textContent = "❌ Gagal: " + err;
-      });
-    } else {
-      statusEl.textContent = "Browser/device tidak mendukung Web NFC.";
-    }
+    scanBtn.addEventListener("click", async () => {
+      if ("NDEFReader" in window) {
+        try {
+          const reader = new NDEFReader();
+          await reader.scan();
+          statusEl.textContent = "Scan dimulai, tempelkan kartu/tag NFC...";
+          
+          reader.onreading = () => {
+            statusEl.textContent = "✅ TAG TERDETEKSI!";
+            // reset setelah 2 detik
+            setTimeout(() => {
+              statusEl.textContent = "Tempelkan kartu/tag NFC...";
+            }, 2000);
+          };
+        } catch (err) {
+          statusEl.textContent = "❌ Gagal: " + err;
+        }
+      } else {
+        statusEl.textContent = "Browser/device tidak mendukung Web NFC.";
+      }
+    });
   </script>
 </body>
 </html>
