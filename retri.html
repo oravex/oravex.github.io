@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Latihan Retribusi MLBB – Simulasi Timing</title>
+  <style>
+    :root{--bg:#0b0f17;--card:#121826;--muted:#8aa0b6;--text:#e6eef7;--accent:#5dd6ff;--good:#2ecc71;--bad:#ff5d7a;--warn:#ffcc66}
+    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    body{margin:0;background:radial-gradient(1200px 600px at 20% -10%,#1b2842 0%,transparent 50%),radial-gradient(1200px 800px at 120% 10%,#142033 0%,transparent 50%),var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:32px auto;padding:16px}
+    h1{font-size:28px;margin:0 0 6px}
+    .sub{color:var(--muted);margin:0 0 24px}
+    .grid{display:grid;gap:16px;grid-template-columns:repeat(12,1fr)}
+    .card{grid-column:span 12;background:linear-gradient(160deg,rgba(93,214,255,.06),transparent),var(--card);border:1px solid rgba(255,255,255,.06);padding:16px 16px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    @media(min-width:860px){.card{padding:18px 20px}}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select{width:100%;height:44px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0e1524;color:var(--text);outline:none}
+    input[type="range"]{height:32px;padding:0}
+    .btn{appearance:none;border:0;border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,#1f2a44,#0e1524);color:#fff;font-weight:700;cursor:pointer;transition:.2s;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 20px rgba(0,0,0,.35)}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn-accent{background:linear-gradient(180deg,#2a93ff,#1873ff)}
+    .btn-good{background:linear-gradient(180deg,#2ecc71,#1ba95a)}
+    .btn-bad{background:linear-gradient(180deg,#ff6b88,#ff3b5e)}
+    .muted{color:var(--muted)}
+    .bar{position:relative;height:22px;border-radius:999px;background:#0e1524;border:1px solid rgba(255,255,255,.1);overflow:hidden}
+    .bar > span{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#2a93ff,#5dd6ff);transition:width .08s linear}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+    .kpi .item{padding:10px 12px;border-radius:12px;background:#0e1524;border:1px solid rgba(255,255,255,.08);text-align:center}
+    .kpi .item .v{font-size:18px;font-weight:800}
+    .big{font-size:34px;font-weight:900;letter-spacing:.3px}
+    .center{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .hint{font-size:12px;color:var(--muted)}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 10px;background:#0e1524;color:var(--muted);font-size:12px}
+    .tag{border-radius:8px;padding:6px 8px;background:#0e1524;border:1px solid rgba(255,255,255,.08)}
+    .log{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b1220;border-radius:10px;border:1px solid rgba(255,255,255,.08);padding:10px;height:140px;overflow:auto;white-space:pre-wrap}
+    .hr{height:1px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.18),rgba(255,255,255,0));margin:14px 0}
+    @media(max-width: 700px){
+    .row{grid-template-columns:1fr}
+    .row3{grid-template-columns:1fr}
+    .kpi{grid-template-columns:repeat(2,1fr)}
+    input,select{height:50px}
+    .center{justify-content:flex-start}
+    .wrap{padding:14px}
+    .card{padding:14px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Latihan Timing <span style="color:var(--accent)">Retribusi</span></h1>
+    <p class="sub">Simulasi HP Lord turun secara real-time. Tugasmu: tekan <b>Retribution</b> di saat yang pas agar <em>secure</em> objektif.</p><div class="grid">
+  <section class="card" style="grid-column:span 12">
+    <div class="row3">
+      <div>
+        <label>HP Lord awal</label>
+        <input type="number" id="hpInit" inputmode="numeric" pattern="[0-9]*"$1>
+        <div class="hint">Tip: Klik preset di bawah untuk isi cepat (mis. Lord Summoned ~ menit 18 ≈ 46.314 HP).</div>
+      </div>
+      <div>
+        <label>Damage Retribution</label>
+        <input type="number" id="retri" inputmode="numeric" pattern="[0-9]*"$1>
+        <div class="hint">Rumus dasar: <b>520 + 80 × level</b> (ke creep/minion). Level 15 ⇒ <b>1.720</b>.</div>
+      </div>
+      <div>
+        <label>Simulasi DPS tim (HP/detik)</label>
+        <input type="number" id="dps" inputmode="numeric" pattern="[0-9]*"$1>
+        <div class="hint">Perkiraan total damage gabungan ke Lord.</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Variasi acak DPS (±%)</label>
+        <input type="range" id="varPct" min="0" max="40" value="15" />
+      </div>
+      <div>
+        <label>Simulasi <abbr title="keterlambatan jaringan">lag</abbr> (ms) saat pencet Retribution</label>
+        <input type="range" id="lag" min="0" max="250" value="80" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Burst Musuh (damage instan)</label>
+        <input type="number" id="burst" min="0" step="1" value="0" />
+        <div class="hint">Damage instan (misal ult atau retri musuh) yang bisa tiba-tiba mengurangi HP Lord.</div>
+      </div>
+      <div>
+        <label>Probabilitas Burst Musuh (%)</label>
+        <input type="range" id="burstChance" min="0" max="100" value="30" />
+        <div class="hint">Peluang musuh melakukan burst tiap detik.</div>
+      </div>
+    </div>
+
+    <div class="center" style="justify-content:space-between; margin-top:14px">
+      <div class="center" style="gap:8px;flex-wrap:wrap">
+        <button class="btn tag" id="preset46k">Preset: Lord Summoned ~ 18:00 ≈ 46.314 HP</button>
+        <button class="btn tag" id="preset50k">Preset cepat: 50.000 HP</button>
+        <button class="btn tag" id="preset80k">Preset cepat: 80.000 HP</button>
+        <span class="pill">Var ±<span id="varShow">15</span>%</span>
+        <span class="pill">Lag <span id="lagShow">80</span>ms</span>
+        <span class="pill">Burst <span id="burstShow">30</span>%</span>
+      </div>
+      <div class="center">
+        <button id="startBtn" type="button" class="btn btn-accent">Mulai</button>
+        <button id="resetBtn" type="button" class="btn">Reset</button>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div>
+      <div class="bar"><span id="barFill" style="width:100%"></span></div>
+      <div class="center" style="justify-content:space-between;margin-top:8px">
+        <div class="big" id="hpNow">HP: -</div>
+        <div class="pill">Threshold Retribusi ≤ <b id="thresh">-</b></div>
+      </div>
+      <div class="kpi">
+        <div class="item"><div class="v" id="timeNow">0.00s</div><div class="muted">Waktu berjalan</div></div>
+        <div class="item"><div class="v" id="tries">0</div><div class="muted">Percobaan</div></div>
+        <div class="item"><div class="v" id="secures">0</div><div class="muted">Secure ✔</div></div>
+        <div class="item"><div class="v" id="fails">0</div><div class="muted">Miss ✖</div></div>
+      </div>
+    </div>
+
+    <div class="center" style="margin-top:14px;justify-content:center">
+      <button id="castBtn" type="button" class="btn btn-good" style="font-size:18px;padding:18px 26px">CAST RETRIBUTION</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="row">
+      <div>
+        <label>Catatan</label>
+        <div class="log" id="log"></div>
+      </div>
+      <div>
+        <label>Tips singkat</label>
+        <ul class="muted" style="margin-top:6px;line-height:1.6">
+          <li>Spam <em>tap</em> kecil saat HP mendekati threshold untuk mengurangi risiko <em>overshoot</em>.</li>
+          <li>Koordinasi burst tim di bawah 5% HP Lord supaya timing Refi lebih bersih.</li>
+          <li>Ingat <b>lag</b> pribadimu: set slider lag agar latihan lebih realistis.</li>
+          <li>Rumus retri dasar: <b>520 + 80 × level</b> (ke creep/minion). Level 15 = <b>1.720</b>.</li>
+          <li>Aktifkan burst musuh acak untuk simulasi contest Retribution musuh.</li>
+        </ul>
+        <div class="hr"></div>
+        <small class="muted">Catatan: Angka HP Lord bisa berubah tiap patch. Preset 46.314 HP mengacu pada <i>Summoned Lord</i> ~ menit 18 dari patch note (estimasi). Untuk <i>Neutral Lord</i> (di pit), isi manual sesuai patch terkini.</small>
+      </div>
+    </div>
+  </section>
+</div>
+
+  </div>  <script>
+    const $ = sel => document.querySelector(sel);
+    const hpInitEl = $('#hpInit');
+    const retriEl = $('#retri');
+    const dpsEl = $('#dps');
+    const varEl = $('#varPct');
+    const lagEl = $('#lag');
+    const burstEl = $('#burst');
+    const burstChanceEl = $('#burstChance');
+    const varShow = $('#varShow');
+    const lagShow = $('#lagShow');
+    const burstShow = $('#burstShow');
+    const startBtn = $('#startBtn');
+    const resetBtn = $('#resetBtn');
+    const castBtn = $('#castBtn');
+    const thresh = $('#thresh');
+    const hpNow = $('#hpNow');
+    const timeNow = $('#timeNow');
+    const barFill = $('#barFill');
+    const tries = $('#tries');
+    const secures = $('#secures');
+    const fails = $('#fails');
+    const log = $('#log');
+
+    retriEl.value = 1720;
+    hpInitEl.value = '';
+
+    varShow.textContent = varEl.value;
+    lagShow.textContent = lagEl.value;
+    burstShow.textContent = burstChanceEl.value;
+
+    let running = false, rafId = null, t0 = 0, hp = 0, hpInit = 0;
+    let nTries = 0, nSec = 0, nFail = 0;
+
+    function fmt(n){return Math.max(0, Math.round(n)).toLocaleString('id-ID')}
+
+    function updateUI(){
+      hpNow.textContent = `HP: ${fmt(hp)}`;
+      const r = Number(retriEl.value||0);
+      thresh.textContent = fmt(r);
+      const w = hpInit>0 ? Math.max(0, Math.min(100, (hp/hpInit)*100)) : 0;
+      barFill.style.width = w + '%';
+    }
+
+    function stop(){
+      running = false;
+      if(rafId){cancelAnimationFrame(rafId); rafId=null}
+      startBtn.textContent = 'Mulai';
+      startBtn.classList.add('btn-accent');
+    }
+
+    function tick(ts){
+      if(!t0) t0 = ts;
+      const dt = (ts - t0)/1000; t0 = ts;
+      const vPct = Number(varEl.value||0)/100;
+      const base = Number(dpsEl.value||0);
+      const rand = (Math.random()*2-1)*vPct;
+      const dps = Math.max(0, base * (1+rand));
+      hp -= dps * dt;
+
+      // Burst musuh acak
+      if(Math.random() < (Number(burstChanceEl.value)/100)*dt){
+        const dmg = Number(burstEl.value||0);
+        if(dmg>0){
+          hp -= dmg;
+          addLog(`BURST musuh −${fmt(dmg)}! HP Lord sekarang ${fmt(hp)}`);
+        }
+      }
+
+      if(hp <= 0){ hp = 0; stop(); addLog('Lord down (tanpa retribusi).'); }
+      updateUI();
+      if(running) rafId = requestAnimationFrame(tick);
+    }
+
+    function addLog(s){
+      const t = timeNow.textContent;
+      log.textContent = `[${t}] ${s}\n` + log.textContent;
+    }
+
+    function loopTime(){
+      if(!running) return;
+      const now = performance.now();
+      const elapsed = (now - startClock)/1000;
+      timeNow.textContent = `${elapsed.toFixed(2)}s`;
+      setTimeout(loopTime, 50);
+    }
+
+    let startClock = 0;
+
+    startBtn.addEventListener('click', ()=>{
+      if(running){ stop(); return; }
+      hpInit = Number(hpInitEl.value||0);
+      if(hpInit <= 0){ alert('Isi HP Lord awal dulu. Contoh: 50000'); return; }
+      hp = hpInit;
+      running = true; t0 = 0; startClock = performance.now();
+      startBtn.textContent = 'Pause';
+      startBtn.classList.remove('btn-accent');
+      updateUI();
+      rafId = requestAnimationFrame(tick);
+      loopTime();
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      stop(); hp = 0; hpInit = 0; t0 = 0; startClock = 0;
+      hpInitEl.value = ''; timeNow.textContent='0.00s';
+      barFill.style
